@@ -15,7 +15,7 @@ interface AudioPlayerListProps {
   files: string[];
 }
 
-const MAX_VOTES = 3;
+const MAX_VOTES = 5;
 
 export default function AudioPlayerList({ files }: AudioPlayerListProps) {
   const [playingIndex, setPlayingIndex] = useState<number | null>(null);
@@ -80,7 +80,7 @@ export default function AudioPlayerList({ files }: AudioPlayerListProps) {
                           size="icon"
                           onClick={() => handlePlay(idx)}
                           disabled={playingIndex === idx}
-                          variant={playingIndex === idx ? "secondary" : "default"}
+                          variant="default"
                           className="w-10 h-10 rounded-full flex justify-center items-center"
                         >
                           {playingIndex === idx ? <Loader2 className="w-5 h-5 animate-spin" /> : <Play className="w-5 h-5" />}
