@@ -1,16 +1,52 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Play, Pause, ArrowUp, ArrowDown, Loader2 } from "lucide-react";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 interface AudioPlayerListProps {
   files: string[];
 }
 
+const MAX_VOTES = 3;
+
 export default function AudioPlayerList({ files }: AudioPlayerListProps) {
   const [playingIndex, setPlayingIndex] = useState<number | null>(null);
   const audioRefs = useRef<(HTMLAudioElement | null)[]>([]);
+  const [votes, setVotes] = useState<Record<string, { up: number; down: number }>>({});
+  const [userVotes, setUserVotes] = useState<number>(0);
+
+  useEffect(() => {
+    fetch("/api/vote")
+      .then((res) => res.json())
+      .then((data) => setVotes(data.votes || {}));
+    setUserVotes(Number(localStorage.getItem("userVotes") || 0));
+  }, [files]);
+
+  const handleVote = async (file: string, voteType: "up" | "down") => {
+    if (userVotes >= MAX_VOTES) return;
+    const res = await fetch("/api/vote", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ file, voteType }),
+    });
+    const data = await res.json();
+    setVotes((prev) => ({ ...prev, [file]: data.votes }));
+    setUserVotes((prev) => {
+      const newVotes = prev + 1;
+      localStorage.setItem("userVotes", String(newVotes));
+      return newVotes;
+    });
+  };
 
   const handlePlay = (idx: number) => {
     audioRefs.current.forEach((audio, i) => {
@@ -28,32 +64,59 @@ export default function AudioPlayerList({ files }: AudioPlayerListProps) {
   };
 
   return (
-    <div className="max-w-xl mx-auto py-10">
-      <h1 className="text-2xl font-bold mb-6 text-center">MP3 Audio Player</h1>
-      <div className="space-y-4">
-        {files.map((file, idx) => (
-          <Card key={file} className="flex items-center justify-between p-4">
-            <CardContent className="flex w-full items-center justify-between p-0">
-              <span className="truncate mr-4 text-base font-medium flex-1" title={file}>{file}</span>
-              <Button
-                onClick={() => handlePlay(idx)}
-                disabled={playingIndex === idx}
-                variant={playingIndex === idx ? "secondary" : "default"}
-                className="ml-4 min-w-[80px]"
-              >
-                {playingIndex === idx ? "Playing..." : "Play"}
-              </Button>
-              <audio
-                ref={el => {
-                  audioRefs.current[idx] = el;
-                }}
-                src={`/mp3/${file}`}
-                preload="auto"
-              />
-            </CardContent>
-          </Card>
-        ))}
+    <div className="max-w-2xl mx-auto py-10">
+      <h1 className="text-2xl font-bold mb-6 text-center">Task Complete Sound Candidates</h1>
+      <div className="mb-4 text-center text-sm text-muted-foreground">
+        Votes left: <span className="font-semibold">{MAX_VOTES - userVotes}</span> / {MAX_VOTES}
       </div>
+      <Card>
+        <CardContent className="p-6">
+          <Table>
+            <TableBody>
+              {files.map((file, idx) => (
+                <TableRow key={file} className="hover:bg-muted transition-colors">
+                  <TableCell className="px-4 py-3">
+                    <div className="flex items-center gap-3 justify-between w-full">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <Button
+                          size="icon"
+                          onClick={() => handlePlay(idx)}
+                          disabled={playingIndex === idx}
+                          variant={playingIndex === idx ? "secondary" : "default"}
+                          className="w-10 h-10 rounded-full flex justify-center items-center"
+                        >
+                          {playingIndex === idx ? <Loader2 className="w-5 h-5 animate-spin" /> : <Play className="w-5 h-5" />}
+                        </Button>
+                        <span className="truncate max-w-xs" title={file}>{file}</span>
+                        <audio
+                          ref={el => {
+                            audioRefs.current[idx] = el;
+                          }}
+                          src={`/mp3/${file}`}
+                          preload="auto"
+                        />
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Button size="icon" variant="secondary" onClick={() => handleVote(file, "up")}
+                          className="w-8 h-8" disabled={userVotes >= MAX_VOTES}>
+                          <ArrowUp className="w-4 h-4" />
+                        </Button>
+                        <span className="w-8 text-center select-none font-semibold">
+                          {(votes[file]?.up || 0) - (votes[file]?.down || 0)}
+                        </span>
+                        <Button size="icon" variant="secondary" onClick={() => handleVote(file, "down")}
+                          className="w-8 h-8" disabled={userVotes >= MAX_VOTES}>
+                          <ArrowDown className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
     </div>
   );
 } 
