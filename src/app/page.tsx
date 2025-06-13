@@ -7,7 +7,7 @@ export default function Home() {
   let files: string[] = [];
   try {
     files = fs.readdirSync(mp3Dir).filter((file) => file.endsWith(".mp3"));
-  } catch (e) {
+  } catch {
     // Directory may not exist
   }
   return <AudioPlayerList files={files} />;

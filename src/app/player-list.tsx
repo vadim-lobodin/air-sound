@@ -3,13 +3,11 @@
 import { useState, useRef, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Play, Pause, ArrowUp, ArrowDown, Loader2 } from "lucide-react";
+import { Play, ArrowUp, ArrowDown, Loader2 } from "lucide-react";
 import {
   Table,
   TableBody,
   TableCell,
-  TableHead,
-  TableHeader,
   TableRow,
 } from "@/components/ui/table";
 
