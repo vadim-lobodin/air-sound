@@ -27,7 +27,8 @@ export default function AudioPlayerList({ files }: AudioPlayerListProps) {
     fetch("/api/vote")
       .then((res) => res.json())
       .then((data) => setVotes(data.votes || {}));
-    setUserVotes(Number(localStorage.getItem("userVotes") || 0));
+    const storedVotes = parseInt(localStorage.getItem("userVotes") || "0", 10);
+    setUserVotes(Number.isNaN(storedVotes) ? 0 : storedVotes);
   }, [files]);
 
   const handleVote = async (file: string, voteType: "up" | "down") => {
