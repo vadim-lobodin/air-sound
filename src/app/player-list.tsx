@@ -22,6 +22,7 @@ export default function AudioPlayerList({ files }: AudioPlayerListProps) {
   const audioRefs = useRef<(HTMLAudioElement | null)[]>([]);
   const [votes, setVotes] = useState<Record<string, { up: number; down: number }>>({});
   const [userVotes, setUserVotes] = useState<number>(0);
+  const [isPlayingAll, setIsPlayingAll] = useState(false);
 
   useEffect(() => {
     fetch("/api/vote")
@@ -62,11 +63,32 @@ export default function AudioPlayerList({ files }: AudioPlayerListProps) {
     }
   };
 
+  const playAll = async () => {
+    if (isPlayingAll) return;
+    setIsPlayingAll(true);
+    for (let i = 0; i < audioRefs.current.length; i++) {
+      const audio = audioRefs.current[i];
+      if (audio) {
+        await new Promise((resolve) => {
+          audio.currentTime = 0;
+          audio.play();
+          audio.onended = resolve;
+        });
+      }
+    }
+    setIsPlayingAll(false);
+  };
+
   return (
     <div className="max-w-2xl mx-auto py-10">
       <h1 className="text-2xl font-bold mb-6 text-center">Task Complete Sound Candidates</h1>
       <div className="mb-4 text-center text-sm text-muted-foreground">
         Votes left: <span className="font-semibold">{MAX_VOTES - userVotes}</span> / {MAX_VOTES}
+      </div>
+      <div className="mb-4 text-center">
+        <Button onClick={playAll} disabled={isPlayingAll} variant="default">
+          {isPlayingAll ? "Playing All..." : "Play All Sounds"}
+        </Button>
       </div>
       <Card>
         <CardContent className="p-6">
